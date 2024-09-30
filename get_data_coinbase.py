@@ -96,6 +96,8 @@ ws = websocket.WebSocketApp(socket_url,
                             on_close=tracker.on_close,
                             on_error=tracker.on_error)
 
+
+
 #Run connection 
 ws.run_forever()
 

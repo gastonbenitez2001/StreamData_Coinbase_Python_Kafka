@@ -1,14 +1,14 @@
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output
-from biblioteca import ClasePrueba
+from biblioteca import CryptoConsumer
 
-# === VAR DE DASH
+# === VAR TO DASH
 
-# Instancia de prueba
-instancia = ClasePrueba()
+# Create instance
+instancia = CryptoConsumer()
 
-# Crear una aplicación Dash
+#Create dash app
 app = dash.Dash(__name__)
 
 # LAYOUT APP
@@ -16,7 +16,7 @@ app = dash.Dash(__name__)
 app.layout = html.Div(children=[
     html.H1(children='Gráfico de Burbujas de Criptomonedas'),
 
-    # Gráfico de burbujas
+    #Figure
     dcc.Graph(id='crypto_sizes'),
 
     #capital
@@ -25,37 +25,53 @@ app.layout = html.Div(children=[
     # Intervalo de tiempo
     dcc.Interval(
         id='interval_time',
-        interval=5 * 1000,  # Actualizar cada 5 segundos
+        interval=5 * 1000,  # update for each 5 seconds
         n_intervals=0
-    ),
-
-    # Componente para almacenar datos temporalmente
-    dcc.Store(id='dummy-store')
+    )
 ])
 
 
-# Callback que se ejecuta cada 5 segundos
+#Execute callback for each 5 seconds
 @app.callback(
-    Output('crypto_sizes', 'figure'),  # Output: El gráfico de burbujas
-    Input('interval_time', 'n_intervals')  # Input: Cada 5 segundos
+    [Output('crypto_sizes', 'figure'),  # Primer gráfico
+     Output('capital', 'figure')],  # Segundo gráfico
+    [Input('interval_time', 'n_intervals')]  # Input: Cada 5 segundos
 )
 def update_graph(n_intervals):
+
+    print(".")
     
     instancia.update_vars()
 
-    # Crear el gráfico basado en los datos almacenados
-    figure = {
+    print(instancia.eth_size,instancia.btc_size,instancia.eth_capital,instancia.btc_capital)
+
+    #Create and send figure number of cryptocurrencies transferred
+    figure_sizes = {
         'data': [
             {'x': ['BTC', 'ETH'], 'y': [instancia.btc_size,instancia.eth_size], 'type': 'bar'}
         ],
         'layout': {
-            'title': 'Capital Transaccionado de Criptomonedas'
+            'title': 'Total number of cryptocurrencies transferred'
         }
     }
-    return figure
 
-    
 
-# Ejecutar la aplicación en el servidor local
+
+    #Create cryptocurrencies transferred figure
+    figure_capital = {
+        'data': [
+            {'x': ['BTC', 'ETH'], 'y': [instancia.btc_capital,instancia.eth_capital], 'type': 'bar'}
+        ],
+        'layout': {
+            'title': 'Capital cryptocurrencies transferred '
+        }
+    }
+
+
+
+
+    return figure_sizes, figure_capital
+
+
 if __name__ == '__main__':
     app.run_server(debug=True, port=8050)

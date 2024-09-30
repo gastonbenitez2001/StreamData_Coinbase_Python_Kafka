@@ -2,42 +2,45 @@ from confluent_kafka import Consumer, KafkaException
 import time
 import json
 
-class ClasePrueba:
+class CryptoConsumer:
     
     def __init__(self):
 
-        # Configuración del consumidor
+        #Conf to consumer
         conf = {
             'bootstrap.servers': 'localhost:9092',
             'group.id': 'crypto_group',
             'auto.offset.reset': 'earliest'
         }
 
-        # Crear el consumidor
+        # Create consumer with conf
         self.consumer = Consumer(conf)
 
-        # Suscribirse al tópico
+        #Subscribe to the topic
         self.consumer.subscribe(['crypto_price'])
 
-        # === VARS ACUMULADORAS Y DE LOGICA
+        # === Accumulator vars
 
-        # Tamaños
+        #sizes
         self.btc_size = 0
         self.eth_size = 0
 
-        # Capital transaccionado
+        #transacted capital
         self.btc_capital = 0
         self.eth_capital = 0
 
-        # Contador de mensajes recibidos
+        #counter messages
         self.count_message = 0
 
+
+    #Goal: update vars 
     def update_vars(self):
         
         try: 
-            # Consumir hasta 10 mensajes a la vez con un timeout de 1 segundo
+            #Consume to up 100 message for each second
             messages = self.consumer.consume(num_messages=100, timeout=1.0)
 
+            #scroll through list looking for data
             for msg in messages:
 
                 if msg is None:
@@ -46,10 +49,10 @@ class ClasePrueba:
 
                 else:
                     
-                    #DEcodificar datos
+                    #decode data
                     data = json.loads(msg.value().decode("utf-8"))
 
-                    #detectar y contar criptomonedas
+                    #detect and updte vars
                     if data['product_id'] == 'BTC-USD':
                         self.btc_size += data['last_size']
                         self.btc_capital += data['transacted_capital']
@@ -59,24 +62,24 @@ class ClasePrueba:
                         self.eth_capital += data['transacted_capital']
 
                         print(" === BTC === ")
-                        print(f"Total de criptomonedas trasnferidas: {self.btc_size}")
-                        print(f"Total de capital trasnferido: {self.btc_size}")
+                        print(f"Total number of cryptocurrencies transferred: {self.btc_size}")
+                        print(f"Total capital transferred: {self.btc_size}")
 
                         print(" === ETH === ")
-                        print(f"Total de criptomonedas trasnferidas: {self.eth_size}")
-                        print(f"Total de capital trasnferido: {self.eth_capital}")
+                        print(f"Total number of cryptocurrencies transferred: {self.eth_size}")
+                        print(f"Total capital transferred: {self.eth_capital}")
 
 
+                #Control errors
                 if msg.error():
-                    print(f"Error en el mensaje: {msg.error()}")
+                    print(f"Error with message: {msg.error()}")
                     continue
 
-                # Imprimir información del mensaje
-                print(f"Mensaje recibido: {msg.value().decode('utf-8')}")
-                print("--")
+                #Print message receive
+                print(f"message received: {msg.value().decode('utf-8')}")
 
 
-                #Contar cantidad de mensajes
+                #Count message
                 self.count_message += 1
                 
 
