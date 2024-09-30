@@ -1,74 +1,61 @@
-from confluent_kafka import Consumer, KafkaException
-import matplotlib.pyplot as plt
-import json
+import dash
+from dash import dcc, html
+from dash.dependencies import Input, Output
+from biblioteca import ClasePrueba
 
-# Configuración del consumidor
-conf = {
-    'bootstrap.servers': 'localhost:9092',
-    'group.id': 'crypto_group',
-    'auto.offset.reset': 'earliest'
-}
+# === VAR DE DASH
 
-# Crear el consumidor
-consumer = Consumer(conf)
+# Instancia de prueba
+instancia = ClasePrueba()
 
-# Suscribirse al tópico
-consumer.subscribe(['crypto_price'])
+# Crear una aplicación Dash
+app = dash.Dash(__name__)
 
-#Sizes
-btc_size = 0
-eth_size = 0
+# LAYOUT APP
 
-#Capital trasacted
-btc_capital = 0
-eth_capital = 0
+app.layout = html.Div(children=[
+    html.H1(children='Gráfico de Burbujas de Criptomonedas'),
 
-#Count mesagges receive
-count_message = 0
+    # Gráfico de burbujas
+    dcc.Graph(id='crypto_sizes'),
 
-# Consumir mensajes
-try:
-    while True:
-        msg = consumer.poll(1.0)  # Espera por un mensaje durante 1 segundo
-        if msg is None:
-            continue
-        if msg.error():
-            raise KafkaException(msg.error())
-        
+    #capital
+    dcc.Graph(id="capital"),
 
-        #Decodificar mensaje
-        data = json.loads(msg.value().decode("utf-8"))
+    # Intervalo de tiempo
+    dcc.Interval(
+        id='interval_time',
+        interval=5 * 1000,  # Actualizar cada 5 segundos
+        n_intervals=0
+    ),
 
-        #detectar y contar
-        if data['product_id'] == 'BTC-USD':
-            btc_size += data['last_size']
-            btc_capital += data['transacted_capital']
-
-        elif data['product_id'] == 'ETH-USD':
-            eth_size += data['last_size']
-            eth_capital += data['transacted_capital']
+    # Componente para almacenar datos temporalmente
+    dcc.Store(id='dummy-store')
+])
 
 
-        count_message += 1
+# Callback que se ejecuta cada 5 segundos
+@app.callback(
+    Output('crypto_sizes', 'figure'),  # Output: El gráfico de burbujas
+    Input('interval_time', 'n_intervals')  # Input: Cada 5 segundos
+)
+def update_graph(n_intervals):
+    
+    instancia.update_vars()
 
+    # Crear el gráfico basado en los datos almacenados
+    figure = {
+        'data': [
+            {'x': ['BTC', 'ETH'], 'y': [instancia.btc_size,instancia.eth_size], 'type': 'bar'}
+        ],
+        'layout': {
+            'title': 'Capital Transaccionado de Criptomonedas'
+        }
+    }
+    return figure
 
-        if count_message == 200:
-            
-            print(" === BTC === ")
-            print(f"Total de criptomonedas trasnferidas: {btc_size}")
-            print(f"Total de capital trasnferido: {btc_capital}")
+    
 
-            print(" === ETH === ")
-            print(f"Total de criptomonedas trasnferidas: {eth_size}")
-            print(f"Total de capital trasnferido: {eth_capital}")
-
-            #Reiniciamos contador
-            count_message = 0
-
-
-except KeyboardInterrupt:
-    pass
-
-finally:
-    # Cerrar el consumidor
-    consumer.close()
+# Ejecutar la aplicación en el servidor local
+if __name__ == '__main__':
+    app.run_server(debug=True, port=8050)

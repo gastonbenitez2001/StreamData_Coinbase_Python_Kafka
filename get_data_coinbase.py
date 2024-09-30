@@ -3,6 +3,7 @@ import websocket
 from datetime import datetime
 from confluent_kafka import Producer
 
+
 class CryptoTracker:
 
 
@@ -63,7 +64,7 @@ class CryptoTracker:
         message_json = json.dumps(data_count)
             
         #Send mesagge, with key
-        self.producer.produce('crypto_price', key=self.key_crypto_size, value=message_json)
+        self.producer.produce('crypto_price', value=message_json)
 
         self.producer.flush()  # Ensure the message is sent
 
@@ -111,11 +112,10 @@ Paso a paso para ocupar kafka:
     bin/kafka-server-start.sh config/server.properties
 
     
-3 - Crear topico (particionar si uno quiere, en este caso 3)
+3 - Crear topico
 
-    bin/kafka-topics.sh --create --topic crypto_price --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
+    bin/kafka-topics.sh --create --topic crypto_price --bootstrap-server localhost:9092  --replication-factor 1
 
-4 - Crear consumidor de
 
 
 """
